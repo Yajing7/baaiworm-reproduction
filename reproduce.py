@@ -461,6 +461,53 @@ def supplementary2_reproduction(data_dir: Path, out_dir: Path) -> dict[str, obje
     }
 
 
+def supplementary9_reproduction(data_dir: Path, out_dir: Path) -> dict[str, object]:
+    """Quantify voltage propagation along the AVAL axon and two dendrites."""
+    branches = (("Axon", "dynamic_trace_axon.pkl"),
+                ("Dendrite 1", "dynamic_trace_dend1.pkl"),
+                ("Dendrite 2", "dynamic_trace_dend2.pkl"))
+    processed = []
+    metrics = {}
+    for label, filename in branches:
+        with (data_dir / filename).open("rb") as handle:
+            voltage = np.asarray(pickle.load(handle), dtype=np.float32)
+        active = np.flatnonzero(np.any(voltage != 0, axis=1))
+        voltage = voltage[active]
+        baseline = voltage[:, :1000].mean(axis=1)
+        peak = voltage.max(axis=1)
+        amplitude = peak - baseline
+        stride = 50
+        processed.append((label, voltage[:, ::stride], peak, amplitude))
+        key = label.lower().replace(" ", "_")
+        metrics[key] = {
+            "active_compartments": int(voltage.shape[0]),
+            "soma_peak_mv": float(peak[0]),
+            "distal_peak_mv": float(peak[-1]),
+            "distal_to_soma_depolarization_ratio": float(amplitude[-1] / amplitude[0]),
+        }
+        del voltage
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8), constrained_layout=True)
+    for column, (label, sampled, peak, amplitude) in enumerate(processed):
+        time = np.linspace(0, 10, sampled.shape[1])
+        image = axes[0, column].imshow(sampled, aspect="auto", origin="lower",
+                                       extent=(0, 10, 0, sampled.shape[0] - 1),
+                                       cmap="turbo", vmin=-35, vmax=15)
+        axes[0, column].set(title=f"{label}: membrane voltage", xlabel="Time (s)",
+                            ylabel="Compartment from soma")
+        distance = np.linspace(0, 1, peak.size)
+        axes[1, column].plot(distance, peak, label="Peak voltage", color="tab:red")
+        axes[1, column].plot(distance, amplitude, label="Depolarization amplitude",
+                             color="tab:blue")
+        axes[1, column].set(title=f"{label}: spatial attenuation",
+                            xlabel="Normalized distance from soma", ylabel="mV")
+        axes[1, column].legend(frameon=False, fontsize=8)
+    fig.colorbar(image, ax=axes[0, :], label="Membrane voltage (mV)", shrink=0.82)
+    fig.savefig(out_dir / "supplementary9_neurite_propagation_reproduction.png", dpi=180)
+    plt.close(fig)
+    return metrics
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=ROOT / "reproduction_output")
@@ -491,6 +538,9 @@ def main() -> None:
     if args.source_data_root.exists():
         metrics["supplementary_figure2_connection_locations"] = supplementary2_reproduction(
             args.source_data_root / "Supplementary Figure 2", args.output
+        )
+        metrics["supplementary_figure9_neurite_propagation"] = supplementary9_reproduction(
+            args.source_data_root / "Supplementary Figure 9", args.output
         )
         metrics["figure4_source_data"] = figure4_source_reproduction(
             args.source_data_root / "Figure 4", args.output

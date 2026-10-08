@@ -173,6 +173,26 @@
     "gap_junction_inverse_gaussian_mu": 0.7,
     "gap_junction_inverse_gaussian_shape": 0.4
   },
+  "supplementary_figure9_neurite_propagation": {
+    "axon": {
+      "active_compartments": 369,
+      "soma_peak_mv": 12.578125,
+      "distal_peak_mv": -23.453125,
+      "distal_to_soma_depolarization_ratio": 0.19180722534656525
+    },
+    "dendrite_1": {
+      "active_compartments": 13,
+      "soma_peak_mv": 12.578125,
+      "distal_peak_mv": 12.46875,
+      "distal_to_soma_depolarization_ratio": 0.9976202845573425
+    },
+    "dendrite_2": {
+      "active_compartments": 14,
+      "soma_peak_mv": 12.578125,
+      "distal_peak_mv": 12.421875,
+      "distal_to_soma_depolarization_ratio": 0.9965806603431702
+    }
+  },
   "figure4_source_data": {
     "samples": 121,
     "body_points": 17,
