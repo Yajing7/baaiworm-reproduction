@@ -26,6 +26,7 @@ python check_full_reproduction.py
 - `single_neuron_reproduction.png`：6 个代表神经元的实验/模型电生理轨迹和稳态响应；
 - `connection_weight_reproduction.png`：优化后突触与缝隙连接权重分布。
 - `body_kinematics_reproduction.png`：17 个身体采样点在 TBRCS 中的位置和速度波形。
+- `figure6_perturbation_reproduction.png`：论文图 6 的七组结构/连接扰动对比。
 
 这个入口直接读取作者发布的训练结果和原始目标数据，不依赖 GUI、NEURON 或
 CUDA，因此可在当前 Windows 环境确定性运行。它验证的是论文结果/已发布模型资产，
@@ -65,6 +66,10 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
 - 身体运动学：按作者 C++ `KeyWorm::LoadJsonStates` 的布局解析每帧数据：前 6 项
   为目标/坐标速度，随后是 `17×3` 相对位置和 `17×3` 相对速度。复现论文图 4e-f
   所示的头至尾波形，并比较头、中心和尾部速度。
+- 图 6 扰动：读取论文 Zenodo Source Data 中的 control、移除神经突、打乱连接位置、
+  打乱突触/缝隙连接权重、移除突触/缝隙连接七种条件，比较神经相关矩阵以及头、
+  中心、尾部的相对位置和速度。默认数据路径为 `D:\BAAIWorm_Source_Fig6`，也可用
+  `--figure6-data` 指定。
 
 作者 `pre_interaction.py` 先在第 413 行把预测从膜电位变换为激活值，又在第 447 行
 保存前重复执行一次相同变换。因此发布的 `video_offline_eworm.muscle-*.npy` 数值集中

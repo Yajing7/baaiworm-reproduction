@@ -267,9 +267,75 @@ def body_kinematics_reproduction(out_dir: Path) -> dict[str, float | int]:
     }
 
 
+def perturbation_reproduction(data_dir: Path, out_dir: Path) -> dict[str, dict[str, object]]:
+    """Reproduce Fig. 6 from the official Zenodo Source Data."""
+    cases = (
+        ("control", "Control", "control_0.pkl"),
+        ("remove_neurite", "Remove neurite", "remove_neurite_64.pkl"),
+        ("shuffle_location", "Shuffle locations", "shuffle_location_64.pkl"),
+        ("shuffle_syn", "Shuffle synapse weights", "shuffle_weight_syn_64.pkl"),
+        ("shuffle_gj", "Shuffle gap-junction weights", "shuffle_weight_gj_64.pkl"),
+        ("remove_syn", "Remove synapses", "remove_syn_64.pkl"),
+        ("remove_gj", "Remove gap junctions", "remove_gj_64.pkl"),
+    )
+    corr_dir = data_dir / "corr_map"
+    pos_dir = data_dir / "relative_pos"
+    vel_dir = data_dir / "relative_vel"
+    control_corr = np.corrcoef(np.load(corr_dir / "control.npy"))
+    metrics: dict[str, dict[str, object]] = {}
+    fig, axes = plt.subplots(len(cases), 3, figsize=(13, 22), constrained_layout=True)
+    time = np.arange(200) * 0.1
+
+    for row, (key, label, stem) in enumerate(cases):
+        voltages = np.load(corr_dir / f"{key}.npy")
+        corr = np.corrcoef(voltages)
+        pos = np.loadtxt(pos_dir / f"{stem}_rl.txt", delimiter=",")
+        vel = np.loadtxt(vel_dir / f"{stem}_rv.txt", delimiter=",")
+
+        axes[row, 0].imshow(corr, vmin=-1, vmax=1, cmap="coolwarm")
+        axes[row, 0].set_ylabel(label)
+        axes[row, 0].set_xticks([])
+        axes[row, 0].set_yticks([])
+        for index, part in enumerate(("Head", "Center", "Tail")):
+            axes[row, 1].plot(time, pos[:, index], label=part, lw=0.9)
+            axes[row, 2].plot(time, vel[:, index], label=part, lw=0.9)
+        axes[row, 1].set_ylim(bottom=0)
+        axes[row, 2].set_ylim(bottom=0)
+        if row == 0:
+            axes[row, 0].set_title("Neural correlation matrix")
+            axes[row, 1].set_title("Relative position magnitude")
+            axes[row, 2].set_title("Relative velocity magnitude")
+            axes[row, 1].legend(frameon=False, ncol=3, fontsize=8)
+            axes[row, 2].legend(frameon=False, ncol=3, fontsize=8)
+        if row == len(cases) - 1:
+            axes[row, 1].set_xlabel("Time (s)")
+            axes[row, 2].set_xlabel("Time (s)")
+
+        metrics[key] = {
+            "correlation_mse_vs_control": float(np.mean((corr - control_corr) ** 2)),
+            "mean_relative_position_head_center_tail": [float(x) for x in pos.mean(axis=0)],
+            "mean_relative_velocity_head_center_tail": [float(x) for x in vel.mean(axis=0)],
+            "tail_velocity_change_vs_control": None,
+        }
+
+    control_tail = metrics["control"]["mean_relative_velocity_head_center_tail"][2]
+    for values in metrics.values():
+        tail = values["mean_relative_velocity_head_center_tail"][2]
+        values["tail_velocity_change_vs_control"] = float((tail / control_tail) - 1.0)
+    fig.savefig(out_dir / "figure6_perturbation_reproduction.png", dpi=180)
+    plt.close(fig)
+    return metrics
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=ROOT / "reproduction_output")
+    parser.add_argument(
+        "--figure6-data",
+        type=Path,
+        default=Path(r"D:\BAAIWorm_Source_Fig6"),
+        help="Directory containing the selectively extracted Zenodo Figure 6 data",
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     metrics = {
@@ -279,6 +345,10 @@ def main() -> None:
         "optimized_circuit": circuit_reproduction(args.output),
         "body_kinematics": body_kinematics_reproduction(args.output),
     }
+    if args.figure6_data.exists():
+        metrics["figure6_perturbations"] = perturbation_reproduction(
+            args.figure6_data, args.output
+        )
     (args.output / "metrics.json").write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )

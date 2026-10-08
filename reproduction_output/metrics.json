@@ -58,5 +58,105 @@
     "center_speed_rms": 0.38843682565951276,
     "tail_speed_rms": 0.9183676360159121,
     "tail_to_head_speed_ratio": 1.9597303181824994
+  },
+  "figure6_perturbations": {
+    "control": {
+      "correlation_mse_vs_control": 0.0,
+      "mean_relative_position_head_center_tail": [
+        0.12159372176596304,
+        0.02127554866760056,
+        0.12422056094496411
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.504819550243432,
+        0.19670615948364703,
+        0.6214522644440172
+      ],
+      "tail_velocity_change_vs_control": 0.0
+    },
+    "remove_neurite": {
+      "correlation_mse_vs_control": 0.10169867679300665,
+      "mean_relative_position_head_center_tail": [
+        0.2248866588497226,
+        0.03622341115158769,
+        0.21036584110321643
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.6416742421897519,
+        0.4052214438112168,
+        0.8528409384346943
+      ],
+      "tail_velocity_change_vs_control": 0.3723353944130996
+    },
+    "shuffle_location": {
+      "correlation_mse_vs_control": 0.0733799912139007,
+      "mean_relative_position_head_center_tail": [
+        0.2384839461830908,
+        0.03292851749364917,
+        0.21690676535287018
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.7847899178433022,
+        0.3684529945904223,
+        0.6304226857489953
+      ],
+      "tail_velocity_change_vs_control": 0.014434610376717227
+    },
+    "shuffle_syn": {
+      "correlation_mse_vs_control": 0.14237415667167405,
+      "mean_relative_position_head_center_tail": [
+        0.2232010680247383,
+        0.03193814121184116,
+        0.20502146841688415
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.4445708234034537,
+        0.27868485184617664,
+        0.4684924069945037
+      ],
+      "tail_velocity_change_vs_control": -0.24613291511031699
+    },
+    "shuffle_gj": {
+      "correlation_mse_vs_control": 0.1286863451647768,
+      "mean_relative_position_head_center_tail": [
+        0.20439976316717645,
+        0.020781724861066896,
+        0.19602161854810793
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.46901238631128883,
+        0.13586209979540123,
+        0.2726516274389028
+      ],
+      "tail_velocity_change_vs_control": -0.5612669821344511
+    },
+    "remove_syn": {
+      "correlation_mse_vs_control": 0.15868156420703922,
+      "mean_relative_position_head_center_tail": [
+        0.23129290949786985,
+        0.043671412852237086,
+        0.19630172023919085
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.3691086028692898,
+        0.15167206459522922,
+        0.25199859062301044
+      ],
+      "tail_velocity_change_vs_control": -0.5945004869385082
+    },
+    "remove_gj": {
+      "correlation_mse_vs_control": 0.13614415736778496,
+      "mean_relative_position_head_center_tail": [
+        0.23032859977033074,
+        0.03419485132584511,
+        0.2166378075554925
+      ],
+      "mean_relative_velocity_head_center_tail": [
+        0.7396715297236688,
+        0.4043172245313616,
+        0.8977526598985393
+      ],
+      "tail_velocity_change_vs_control": 0.44460437472492664
+    }
   }
 }
