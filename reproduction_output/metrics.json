@@ -1,0 +1,62 @@
+{
+  "correlation_and_pca": {
+    "correlation_initial_mse": 0.255324972395901,
+    "correlation_final_mse": 0.08998347614360475,
+    "paper_reported_mse": 0.076,
+    "pc1_explained_variance": 0.2924970634348371,
+    "pc2_explained_variance": 0.1881760731781954
+  },
+  "reservoir_readout": {
+    "reservoir_train_rmse_activation": 0.0006769968552006972,
+    "reservoir_median_muscle_correlation": 0.9999979933101342,
+    "released_prediction_rmse_after_undoing_duplicate_scale": 5.541563437992549e-07,
+    "reservoir_weight_frobenius_norm": 757.0440754905088
+  },
+  "single_neuron_electrophysiology": {
+    "AIYL": {
+      "steady_state_rmse": 5.012777637616874,
+      "steady_state_correlation": 0.9988904254743544
+    },
+    "AVAL": {
+      "steady_state_rmse": 2.4531232724963954,
+      "steady_state_correlation": 0.9972123307666846
+    },
+    "AWAL": {
+      "steady_state_rmse": 14.512617323320077,
+      "steady_state_correlation": 0.978005827612471
+    },
+    "AWCL": {
+      "steady_state_rmse": 11.903502743908682,
+      "steady_state_correlation": 0.9932712861748868
+    },
+    "RIML": {
+      "steady_state_rmse": 3.5738094814937864,
+      "steady_state_correlation": 0.9990604968621992
+    },
+    "VD05": {
+      "steady_state_rmse": 11.947056270717441,
+      "steady_state_correlation": 0.9888126465692021
+    }
+  },
+  "optimized_circuit": {
+    "neurons": 136,
+    "connections_total": 1901,
+    "gap_junctions": 786,
+    "synapses": 1115,
+    "excitatory_synapses": 352,
+    "inhibitory_synapses": 763,
+    "excitatory_to_inhibitory_ratio": 0.4613368283093054
+  },
+  "body_kinematics": {
+    "frames": 300,
+    "sampled_body_points": 17,
+    "duration_seconds": 30.000000000000004,
+    "velocity_rms_x": 0.30892387783903014,
+    "velocity_rms_y": 0.1793158052220032,
+    "velocity_rms_z": 0.2720020368313034,
+    "head_speed_rms": 0.4686193949724818,
+    "center_speed_rms": 0.38843682565951276,
+    "tail_speed_rms": 0.9183676360159121,
+    "tail_to_head_speed_ratio": 1.9597303181824994
+  }
+}

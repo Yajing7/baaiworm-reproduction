@@ -1,0 +1,72 @@
+# BAAIWorm 论文复现说明
+
+本文对应 Zhao et al., *Nature Computational Science* 4, 978-990 (2024)，DOI:
+`10.1038/s43588-024-00738-w`。
+
+## 已完成的可执行复现
+
+在仓库根目录运行：
+
+```powershell
+python reproduce.py
+```
+
+检查完整仿真环境：
+
+```powershell
+python check_full_reproduction.py
+```
+
+输出写入 `reproduction_output/`：
+
+- `metrics.json`：数值指标；
+- `correlation_reproduction.png`：65 个神经元的实验目标、优化前后相关矩阵；
+- `pca_reproduction.png`：论文所述神经活动 PCA；
+- `reservoir_reproduction.png`：80 个运动神经元到 96 块肌肉的线性 readout。
+- `single_neuron_reproduction.png`：6 个代表神经元的实验/模型电生理轨迹和稳态响应；
+- `connection_weight_reproduction.png`：优化后突触与缝隙连接权重分布。
+- `body_kinematics_reproduction.png`：17 个身体采样点在 TBRCS 中的位置和速度波形。
+
+这个入口直接读取作者发布的训练结果和原始目标数据，不依赖 GUI、NEURON 或
+CUDA，因此可在当前 Windows 环境确定性运行。它验证的是论文结果/已发布模型资产，
+不是从随机初始化重新训练 136 神经元网络。
+
+## 完整重训练与闭环仿真
+
+作者官方测试环境是 Ubuntu 20.04、Python 3.8、CUDA 11.4、NEURON 8.0、
+OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、C++/CUDA
+软体有限元与渲染模块，并运行 GPU 优化。作者训练脚本 `eworm_learn/run_eworm_v4.py`
+默认 `ngpu = 8`，当前 Windows + RTX 4050 6 GB 不适合原样重跑。
+
+建议在兼容的 Ubuntu 工作站执行：
+
+1. 安装 Python 3.8、NEURON 8.0、PyTorch/CuPy（匹配 CUDA 11.4）。
+2. 在 `eworm/components/mechanism` 运行 `nrnivmodl modfile`。
+3. 在 `eworm_learn` 运行 `nrnivmodl components/mechanism/modfile`。
+4. 修改 `run_eworm_v4.py` 的 `ngpu` 与显存相关参数后运行
+   `./x86_64/special run_eworm_v4.py`。
+5. 按官方 README 编译 `neuronXcore`，再运行开环或闭环 GUI 仿真。
+
+注意：官方 `requirements.txt` 是 Ubuntu 系统环境的完整导出，含 `apturl`、
+`python-apt`、`dbus-python` 等系统包，不能当作便携 Python requirements 直接安装。
+
+## 复现判据
+
+- 相关矩阵：用最终 65 条膜电位轨迹计算 Pearson 相关矩阵，与实验目标比较 MSE。
+  论文报告 MSE 0.076；仓库当前提交所附 `v_final_eworm_v4.npy` 会得到接近但不完全
+  相同的值，具体见 `metrics.json`。
+- PCA：对每个神经元的膜电位去均值，对 65 神经元进行 SVD/PCA。
+- 神经-肌肉 readout：以 100 ms 为窗口平均 80 个运动神经元膜电位，丢弃前 40
+  个窗口，用岭回归（`alpha=1e-3`）拟合 96 块肌肉，与作者源码一致。
+- 单神经元：复用作者发布的膜片钳数字化数据和 NEURON 输出，按原 notebook 的
+  `4/7` 到 `5.9/7` 时间窗计算稳态 I-V 响应、RMSE 与相关系数。
+- 连接结构：直接读取优化后的 136 神经元抽象电路，统计化学突触、缝隙连接、
+  兴奋/抑制极性和权重分布，不需要加载 NMODL。
+- 身体运动学：按作者 C++ `KeyWorm::LoadJsonStates` 的布局解析每帧数据：前 6 项
+  为目标/坐标速度，随后是 `17×3` 相对位置和 `17×3` 相对速度。复现论文图 4e-f
+  所示的头至尾波形，并比较头、中心和尾部速度。
+
+作者 `pre_interaction.py` 先在第 413 行把预测从膜电位变换为激活值，又在第 447 行
+保存前重复执行一次相同变换。因此发布的 `video_offline_eworm.muscle-*.npy` 数值集中
+在约 0.8。复现脚本会撤销第二次变换，再与重新计算结果比较；该差异属于发布代码的
+序列化缩放问题，不是 reservoir 拟合失败。
