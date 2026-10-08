@@ -7,6 +7,7 @@ published artifacts without requiring NEURON, CUDA, OptiX, or the C++ GUI.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import pickle
 import sys
@@ -508,6 +509,88 @@ def supplementary9_reproduction(data_dir: Path, out_dir: Path) -> dict[str, obje
     return metrics
 
 
+def supplementary6_multiseed_reproduction(data_dir: Path, out_dir: Path) -> dict[str, object]:
+    """Aggregate closed-loop behavioral outcomes across all perturbation seeds."""
+    groups = (
+        ("control", "Control"),
+        ("remove_neurite", "Remove neurites"),
+        ("shuffle_location", "Shuffle locations"),
+        ("shuffle_weight_syn", "Shuffle synaptic weights"),
+        ("shuffle_weight_gj", "Shuffle gap-junction weights"),
+        ("remove_syn", "Remove synapses"),
+        ("remove_gj", "Remove gap junctions"),
+    )
+    raw: dict[str, list[dict[str, float]]] = {}
+    for prefix, _ in groups:
+        runs = []
+        for path in sorted(data_dir.glob(f"{prefix}_*.pkl")):
+            with path.open("rb") as handle:
+                result = pickle.load(handle)
+            behavior = np.asarray(result["behavior_value"], dtype=np.float32)
+            world_head = np.asarray(result["world_head_location"], dtype=np.float32)
+            speed = np.linalg.norm(np.moveaxis(behavior[3:6], 0, -1), axis=-1)
+            head_speed = float(speed[:, 0].mean())
+            tail_speed = float(speed[:, -1].mean())
+            runs.append({
+                "seed": int(path.stem.rsplit("_", 1)[1]),
+                "net_head_displacement": float(np.linalg.norm(world_head[-1] - world_head[0])),
+                "head_path_length": float(np.linalg.norm(np.diff(world_head, axis=0), axis=1).sum()),
+                "mean_head_speed": head_speed,
+                "mean_tail_speed": tail_speed,
+                "tail_to_head_speed_ratio": tail_speed / head_speed,
+            })
+            del result, behavior, world_head, speed
+            gc.collect()
+        raw[prefix] = runs
+
+    metric_names = ("net_head_displacement", "mean_head_speed", "mean_tail_speed",
+                    "tail_to_head_speed_ratio")
+    control = {name: raw["control"][0][name] for name in metric_names}
+    summary: dict[str, object] = {}
+    t95 = {1: 0.0, 5: 2.776, 10: 2.262}
+    for prefix, _ in groups:
+        condition = {"n": len(raw[prefix]), "seeds": [run["seed"] for run in raw[prefix]]}
+        for name in metric_names:
+            values = np.asarray([run[name] for run in raw[prefix]])
+            mean = float(values.mean())
+            sd = float(values.std(ddof=1)) if values.size > 1 else 0.0
+            half_width = t95.get(values.size, 1.96) * sd / np.sqrt(values.size)
+            condition[name] = {
+                "values": [float(value) for value in values],
+                "mean": mean,
+                "sd": sd,
+                "ci95": [mean - half_width, mean + half_width],
+                "relative_change_vs_control": float(mean / control[name] - 1.0),
+            }
+        summary[prefix] = condition
+
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10), constrained_layout=True)
+    labels = [label for _, label in groups]
+    plot_metrics = (
+        ("net_head_displacement", "Net head displacement"),
+        ("mean_head_speed", "Mean head speed"),
+        ("mean_tail_speed", "Mean tail speed"),
+        ("tail_to_head_speed_ratio", "Tail/head speed ratio"),
+    )
+    rng = np.random.default_rng(2024)
+    for ax, (name, title) in zip(axes.flat, plot_metrics):
+        for index, (prefix, _) in enumerate(groups):
+            values = np.asarray(summary[prefix][name]["values"])
+            mean = summary[prefix][name]["mean"]
+            low, high = summary[prefix][name]["ci95"]
+            jitter = rng.uniform(-0.10, 0.10, values.size)
+            ax.scatter(index + jitter, values, s=24, alpha=0.65, color="tab:blue")
+            ax.errorbar(index, mean, yerr=[[mean - low], [high - mean]], fmt="o",
+                        color="black", capsize=5, lw=1.5)
+        ax.axhline(control[name], color="tab:red", ls="--", lw=1, alpha=0.7)
+        ax.set(title=f"{title} (mean and 95% t CI)", xticks=np.arange(len(labels)),
+               xticklabels=labels)
+        ax.tick_params(axis="x", rotation=28)
+    fig.savefig(out_dir / "supplementary6_multiseed_statistics.png", dpi=180)
+    plt.close(fig)
+    return summary
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=ROOT / "reproduction_output")
@@ -538,6 +621,9 @@ def main() -> None:
     if args.source_data_root.exists():
         metrics["supplementary_figure2_connection_locations"] = supplementary2_reproduction(
             args.source_data_root / "Supplementary Figure 2", args.output
+        )
+        metrics["supplementary_figure6_multiseed_statistics"] = supplementary6_multiseed_reproduction(
+            args.source_data_root / "Supplementary Figure 6", args.output
         )
         metrics["supplementary_figure9_neurite_propagation"] = supplementary9_reproduction(
             args.source_data_root / "Supplementary Figure 9", args.output
