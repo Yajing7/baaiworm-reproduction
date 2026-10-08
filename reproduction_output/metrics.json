@@ -4,7 +4,9 @@
     "correlation_final_mse": 0.08998347614360475,
     "paper_reported_mse": 0.076,
     "pc1_explained_variance": 0.2924970634348371,
-    "pc2_explained_variance": 0.1881760731781954
+    "pc2_explained_variance": 0.1881760731781954,
+    "official_source_control_mse": 0.07500616091249698,
+    "absolute_difference_from_paper_mse": 0.000993839087503015
   },
   "reservoir_readout": {
     "reservoir_train_rmse_activation": 0.0006769968552006972,
@@ -157,6 +159,37 @@
         0.8977526598985393
       ],
       "tail_velocity_change_vs_control": 0.44460437472492664
+    }
+  },
+  "supplementary_figure2_connection_locations": {
+    "chemical_count": 6565,
+    "chemical_mean_location": 0.31274872739374304,
+    "chemical_median_location": 0.239198662203617,
+    "chemical_inverse_gaussian_mu": 0.44,
+    "chemical_inverse_gaussian_shape": 0.63,
+    "gap_junction_count": 287,
+    "gap_junction_mean_location": 0.27422053924791473,
+    "gap_junction_median_location": 0.19762590923257,
+    "gap_junction_inverse_gaussian_mu": 0.7,
+    "gap_junction_inverse_gaussian_shape": 0.4
+  },
+  "figure4_source_data": {
+    "samples": 121,
+    "body_points": 17,
+    "head_rms_speed": 0.42658287973432585,
+    "tail_rms_speed": 1.0055247539701104,
+    "tail_to_head_rms_speed_ratio": 2.3571615311808745
+  },
+  "closed_vs_open_loop": {
+    "closed_loop": {
+      "samples": 811,
+      "motor_spectral_concentration": 0.040945356039680796,
+      "muscle_spectral_concentration": 0.02660890078989923
+    },
+    "open_loop": {
+      "samples": 566,
+      "motor_spectral_concentration": 0.15293223491911523,
+      "muscle_spectral_concentration": 0.2006561740533224
     }
   }
 }

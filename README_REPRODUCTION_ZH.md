@@ -27,6 +27,8 @@ python check_full_reproduction.py
 - `connection_weight_reproduction.png`：优化后突触与缝隙连接权重分布。
 - `body_kinematics_reproduction.png`：17 个身体采样点在 TBRCS 中的位置和速度波形。
 - `figure6_perturbation_reproduction.png`：论文图 6 的七组结构/连接扰动对比。
+- `figure4_source_reproduction.png`：用官方 Source Data 精确重绘图 4e-f 身体波形。
+- `closed_vs_open_loop_reproduction.png`：图 5 闭环与补充图 8 开环动力学对比。
 
 这个入口直接读取作者发布的训练结果和原始目标数据，不依赖 GUI、NEURON 或
 CUDA，因此可在当前 Windows 环境确定性运行。它验证的是论文结果/已发布模型资产，
@@ -70,8 +72,17 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
   打乱突触/缝隙连接权重、移除突触/缝隙连接七种条件，比较神经相关矩阵以及头、
   中心、尾部的相对位置和速度。默认数据路径为 `D:\BAAIWorm_Source_Fig6`，也可用
   `--figure6-data` 指定。
+- 闭环/开环：读取 Figure 5 和 Supplementary Figure 8 的输入、80 个运动神经元及
+  96 块肌肉时间序列，并计算频谱集中度，量化论文所述周期输入产生规则周期运动、
+  感觉反馈产生非周期活动的差别。
 
 作者 `pre_interaction.py` 先在第 413 行把预测从膜电位变换为激活值，又在第 447 行
 保存前重复执行一次相同变换。因此发布的 `video_offline_eworm.muscle-*.npy` 数值集中
 在约 0.8。复现脚本会撤销第二次变换，再与重新计算结果比较；该差异属于发布代码的
 序列化缩放问题，不是 reservoir 拟合失败。
+
+## 官方 Source Data 的新增精确验证
+
+- 补充图 3：直接读取 `Supplementary Figure 3/control.npy`，重算 65 个神经元的相关矩阵。MSE 为 `0.075006`，论文报告值为 `0.076`。
+- 补充图 2：从 `syn_gj_dist.xlsx` 读取 6,565 个化学突触与 287 个缝隙连接的位置，复现经验分布及论文给出的逆高斯拟合参数。输出为 `supplementary2_connection_location_reproduction.png`。
+- 图 4、图 5 与补充图 8：分别从官方位置/速度和闭环/开环时序数据重绘，并将全部定量结果写入 `reproduction_output/metrics.json`。
