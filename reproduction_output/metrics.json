@@ -40,6 +40,48 @@
       "steady_state_correlation": 0.9888126465692021
     }
   },
+  "supplementary_figure1_electrophysiology": {
+    "AWCL": {
+      "morphology_sections": 3,
+      "morphology_points": 41,
+      "steady_state_rmse": 11.903502743908682,
+      "steady_state_correlation": 0.9932712861748868,
+      "initial_peak_rmse": 71.82503027881467,
+      "initial_peak_correlation": 0.9938093568454102
+    },
+    "AIYL": {
+      "morphology_sections": 2,
+      "morphology_points": 16,
+      "steady_state_rmse": 5.012777637616874,
+      "steady_state_correlation": 0.9988904254743544,
+      "initial_peak_rmse": 8.453624908991861,
+      "initial_peak_correlation": 0.994541530016447
+    },
+    "AVAL": {
+      "morphology_sections": 4,
+      "morphology_points": 61,
+      "steady_state_rmse": 2.4531232724963954,
+      "steady_state_correlation": 0.9972123307666846,
+      "initial_peak_rmse": 2.5519643943243846,
+      "initial_peak_correlation": 0.9962899378759624
+    },
+    "RIML": {
+      "morphology_sections": 6,
+      "morphology_points": 44,
+      "steady_state_rmse": 3.5738094814937864,
+      "steady_state_correlation": 0.9990604968621992,
+      "initial_peak_rmse": 3.44010294987721,
+      "initial_peak_correlation": 0.9986896738748688
+    },
+    "VD05": {
+      "morphology_sections": 6,
+      "morphology_points": 36,
+      "steady_state_rmse": 11.947056270717441,
+      "steady_state_correlation": 0.9888126465692021,
+      "initial_peak_rmse": 35.54845650685292,
+      "initial_peak_correlation": 0.9405774003006587
+    }
+  },
   "optimized_circuit": {
     "neurons": 136,
     "connections_total": 1901,

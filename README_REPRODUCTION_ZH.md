@@ -83,6 +83,7 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
 
 ## 官方 Source Data 的新增精确验证
 
+- 补充图 1：按官方补充材料的 5 行×4 列结构重建 AWC(L)、AIY(L)、AVA(L)、RIM(L)、VD5。直接解析 HOC 文件绘制形态，并重绘实验/模型响应、稳态 I-V 和初始峰值 I-V。输出为 `supplementary1_electrophysiology_reproduction.png`。
 - 补充图 3：直接读取 `Supplementary Figure 3/control.npy`，重算 65 个神经元的相关矩阵。MSE 为 `0.075006`，论文报告值为 `0.076`。
 - 补充图 2：从 `syn_gj_dist.xlsx` 读取 6,565 个化学突触与 287 个缝隙连接的位置，复现经验分布及论文给出的逆高斯拟合参数。输出为 `supplementary2_connection_location_reproduction.png`。
 - 补充图 4：按作者 `wave_detect.py` 的 301 点窗口、10 倍插值和汇总互相关算法复现肌肉波传播，最优相邻肌肉延迟为 0.17 s。输出为 `supplementary4_muscle_wave_delay_reproduction.png`。

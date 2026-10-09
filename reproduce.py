@@ -10,6 +10,7 @@ import argparse
 import gc
 import json
 import pickle
+import re
 import sys
 import zipfile
 import xml.etree.ElementTree as ET
@@ -201,6 +202,110 @@ def single_neuron_reproduction(out_dir: Path) -> dict[str, dict[str, float]]:
         metrics[name] = {"steady_state_rmse": rmse, "steady_state_correlation": corr}
 
     fig.savefig(out_dir / "single_neuron_reproduction.png", dpi=180)
+    plt.close(fig)
+    return metrics
+
+
+def _hoc_morphology(neuron_name: str) -> dict[str, np.ndarray]:
+    """Extract section point coordinates directly from an exported NEURON HOC file."""
+    text = (ROOT / "eworm" / "components" / "model" / f"{neuron_name}.hoc").read_text()
+    sections: dict[str, list[list[float]]] = {}
+    for match in re.finditer(
+        r"(?m)^\s*(\w+)\s*\{\s*pt3dadd\(\s*([-+\d.eE]+)\s*,\s*([-+\d.eE]+)\s*,"
+        r"\s*([-+\d.eE]+)\s*,\s*([-+\d.eE]+)\s*\)\s*\}", text
+    ):
+        section = match.group(1)
+        sections.setdefault(section, []).append([float(match.group(i)) for i in range(2, 6)])
+    return {name: np.asarray(points) for name, points in sections.items()}
+
+
+def supplementary1_electrophysiology_reproduction(out_dir: Path) -> dict[str, object]:
+    """Rebuild Supplementary Fig. 1: morphology, traces, steady and peak I-V curves."""
+    base = ROOT / "eworm" / "model_figure" / "single_neuron"
+    neuron_names = ("AWCL", "AIYL", "AVAL", "RIML", "VD05")
+    display_names = ("AWC(L)", "AIY(L)", "AVA(L)", "RIM(L)", "VD5")
+    voltage_clamp = {"AWCL", "VD05"}
+    fig, axes = plt.subplots(len(neuron_names), 4, figsize=(18, 18), constrained_layout=True)
+    metrics: dict[str, object] = {}
+
+    for row, (name, display_name) in enumerate(zip(neuron_names, display_names)):
+        with (base / "simulation_data" / f"{name}_simulation_trace.pkl").open("rb") as handle:
+            sim = pickle.load(handle)
+        with (base / "electrophysiology_data" / f"{name}_electrophysiology_trace.pkl").open("rb") as handle:
+            exp = pickle.load(handle)
+        sim_y, exp_y = np.asarray(sim["voltage"], float), np.asarray(exp["voltage"], float)
+        sim_t, exp_t = np.asarray(sim["time"], float), np.asarray(exp["time"], float)
+        if sim_t.ndim == 2:
+            sim_t = sim_t[0]
+        scale = 1000.0 if name in voltage_clamp else 1.0
+        stim = np.asarray(sim["stim"], float)
+        stim_level = stim[:, stim.shape[1] // 2]
+
+        ax = axes[row, 0]
+        morphology = _hoc_morphology(name)
+        for section, points in morphology.items():
+            ax.plot(points[:, 0], points[:, 1], color="tab:blue",
+                    lw=3.0 if "Soma" in section else 1.2)
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.axis("off")
+        ax.text(-0.08, 0.5, display_name, transform=ax.transAxes, rotation=90,
+                va="center", ha="center", fontsize=12, fontweight="bold")
+
+        ax = axes[row, 1]
+        for trace in exp_y:
+            ax.plot(exp_t, trace * scale, color="0.65", lw=0.8)
+        for trace in sim_y:
+            ax.plot(sim_t, trace * scale, color="tab:blue", lw=0.8, alpha=0.85)
+        ax.set(xlabel="Time (s)", ylabel="Current (pA)" if name in voltage_clamp else "Voltage (mV)")
+
+        sim_steady_slice = slice(int(sim_y.shape[1] * 4 / 7), int(sim_y.shape[1] * 5.9 / 7))
+        exp_steady_slice = slice(int(exp_y.shape[1] * 4 / 7), int(exp_y.shape[1] * 5.9 / 7))
+        sim_steady = sim_y[:, sim_steady_slice].mean(axis=1) * scale
+        exp_steady = exp_y[:, exp_steady_slice].mean(axis=1) * scale
+
+        changed = np.any(np.abs(stim - stim[:, :1]) > 1e-9, axis=0)
+        indices = np.flatnonzero(changed)
+        onset, offset = int(indices[0]), int(indices[-1] + 1)
+        early_end = min(offset, onset + max(4, int((offset - onset) * 0.10)))
+        exp_onset = int(onset / sim_y.shape[1] * exp_y.shape[1])
+        exp_early_end = int(early_end / sim_y.shape[1] * exp_y.shape[1])
+
+        def initial_peak(values: np.ndarray, start: int, end: int) -> np.ndarray:
+            baseline = values[:, max(0, start - 20):start].mean(axis=1)
+            segment = values[:, start:end]
+            peak_index = np.abs(segment - baseline[:, None]).argmax(axis=1)
+            return segment[np.arange(segment.shape[0]), peak_index] * scale
+
+        sim_peak = initial_peak(sim_y, onset, early_end)
+        exp_peak = initial_peak(exp_y, exp_onset, max(exp_onset + 2, exp_early_end))
+        x_values = stim_level
+        xlabel = "Voltage (mV)" if name in voltage_clamp else "Current (pA)"
+        ylabel = "Current (pA)" if name in voltage_clamp else "Voltage (mV)"
+        for column, model_values, experimental_values, title in (
+            (2, sim_steady, exp_steady, "Steady-state I-V"),
+            (3, sim_peak, exp_peak, "Initial-peak I-V"),
+        ):
+            ax = axes[row, column]
+            ax.plot(x_values, experimental_values, "o-", color="tab:red", ms=4, label="Experiment")
+            ax.plot(x_values, model_values, "*-", color="black", ms=5, label="Model")
+            ax.set(xlabel=xlabel, ylabel=ylabel)
+            if row == 0:
+                ax.set_title(title)
+            if row == 0 and column == 3:
+                ax.legend(frameon=False, fontsize=8)
+
+        metrics[name] = {
+            "morphology_sections": len(morphology),
+            "morphology_points": int(sum(len(points) for points in morphology.values())),
+            "steady_state_rmse": float(np.sqrt(np.mean((sim_steady - exp_steady) ** 2))),
+            "steady_state_correlation": float(np.corrcoef(sim_steady, exp_steady)[0, 1]),
+            "initial_peak_rmse": float(np.sqrt(np.mean((sim_peak - exp_peak) ** 2))),
+            "initial_peak_correlation": float(np.corrcoef(sim_peak, exp_peak)[0, 1]),
+        }
+
+    for column, title in enumerate(("Morphology", "Response to stimuli", "Steady-state I-V", "Initial-peak I-V")):
+        axes[0, column].set_title(title)
+    fig.savefig(out_dir / "supplementary1_electrophysiology_reproduction.png", dpi=180)
     plt.close(fig)
     return metrics
 
@@ -674,6 +779,7 @@ def main() -> None:
         "correlation_and_pca": correlation_reproduction(args.output, args.source_data_root),
         "reservoir_readout": reservoir_reproduction(args.output),
         "single_neuron_electrophysiology": single_neuron_reproduction(args.output),
+        "supplementary_figure1_electrophysiology": supplementary1_electrophysiology_reproduction(args.output),
         "optimized_circuit": circuit_reproduction(args.output),
         "body_kinematics": body_kinematics_reproduction(args.output),
     }
