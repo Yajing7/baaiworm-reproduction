@@ -173,6 +173,13 @@
     "gap_junction_inverse_gaussian_mu": 0.7,
     "gap_junction_inverse_gaussian_shape": 0.4
   },
+  "supplementary_figure4_muscle_wave_delay": {
+    "analysis_samples": 301,
+    "muscles": 96,
+    "interpolation_factor": 10,
+    "best_adjacent_muscle_delay_seconds": 0.17,
+    "maximum_summed_cross_correlation": 5332542.3164458675
+  },
   "supplementary_figure6_multiseed_statistics": {
     "control": {
       "n": 1,
@@ -747,6 +754,18 @@
         "relative_change_vs_control": -0.052639800424966854
       }
     }
+  },
+  "supplementary_figure7_readout_weights": {
+    "motor_neurons": 80,
+    "muscles": 96,
+    "minimum_weight": -670.5764795684415,
+    "maximum_weight": 604.8734427999948,
+    "mean_weight": 0.0015194316485858635,
+    "weight_standard_deviation": 51.1337860771989,
+    "frobenius_norm": 4481.140495598429,
+    "positive_fraction": 0.5005208333333333,
+    "negative_fraction": 0.49947916666666664,
+    "fraction_abs_weight_below_1": 0.17213541666666668
   },
   "supplementary_figure9_neurite_propagation": {
     "axon": {

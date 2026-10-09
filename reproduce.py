@@ -509,16 +509,85 @@ def supplementary9_reproduction(data_dir: Path, out_dir: Path) -> dict[str, obje
     return metrics
 
 
+def supplementary4_muscle_wave_reproduction(data_dir: Path, out_dir: Path) -> dict[str, object]:
+    """Reproduce the authors' cross-correlation estimate of muscle-wave delay."""
+    muscle = _load_trailing_comma_matrix(data_dir / "online_muscle.txt")[300:601].T
+    original_x = np.arange(muscle.shape[1])
+    interpolated_x = np.arange(0, muscle.shape[1] - 1, 0.1)
+    traces = np.asarray([np.interp(interpolated_x, original_x, trace) for trace in muscle])
+    cross_correlations = np.asarray([
+        np.correlate(traces[0], trace, mode="full") for trace in traces
+    ])
+    calculation_range = np.arange(2500, 3000)
+    summed = []
+    for offset in range(60):
+        value = 0.0
+        for quadrant in range(4):
+            for muscle_index in range(24):
+                value += cross_correlations[quadrant * 24 + muscle_index,
+                                            calculation_range + muscle_index * offset].sum()
+        summed.append(value)
+    summed = np.asarray(summed)
+    delays = np.arange(summed.size) * 0.01
+    best_index = int(np.argmax(summed))
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5), constrained_layout=True)
+    axes[0].imshow(muscle, aspect="auto", origin="lower", cmap="turbo",
+                   extent=(0, 30, 0, 96))
+    axes[0].set(title="Closed-loop muscle activation", xlabel="Time in analysis window (s)",
+                ylabel="Muscle index")
+    axes[1].plot(delays, summed, color="black", lw=1.8)
+    axes[1].axvline(delays[best_index], color="tab:red", ls="--",
+                    label=f"maximum at {delays[best_index]:.2f} s")
+    axes[1].axhline(summed[best_index], color="tab:red", ls=":", alpha=0.7)
+    axes[1].set(title="Summed cross-correlation", xlabel="Adjacent-muscle delay (s)",
+                ylabel="Sum(cross-correlation)", xlim=(0, 0.5))
+    axes[1].legend(frameon=False)
+    fig.savefig(out_dir / "supplementary4_muscle_wave_delay_reproduction.png", dpi=180)
+    plt.close(fig)
+    return {
+        "analysis_samples": int(muscle.shape[1]), "muscles": int(muscle.shape[0]),
+        "interpolation_factor": 10,
+        "best_adjacent_muscle_delay_seconds": float(delays[best_index]),
+        "maximum_summed_cross_correlation": float(summed[best_index]),
+    }
+
+
+def supplementary7_readout_weights_reproduction(data_dir: Path, out_dir: Path) -> dict[str, object]:
+    """Visualize the released 80-motor-neuron to 96-muscle readout matrix."""
+    with (data_dir / "video_online_wout.pkl").open("rb") as handle:
+        weights = np.asarray(pickle.load(handle), dtype=float)
+    limit = float(np.percentile(np.abs(weights), 99))
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6), constrained_layout=True)
+    image = axes[0].imshow(weights, aspect="auto", cmap="coolwarm", vmin=-limit, vmax=limit)
+    axes[0].set(title="Released closed-loop readout weights", xlabel="Muscle index",
+                ylabel="Motor-neuron index")
+    fig.colorbar(image, ax=axes[0], label="Weight", shrink=0.85)
+    axes[1].hist(weights.ravel(), bins=80, color="tab:blue", alpha=0.75)
+    axes[1].axvline(0, color="black", lw=1)
+    axes[1].set(title="Readout-weight distribution", xlabel="Weight", ylabel="Count")
+    fig.savefig(out_dir / "supplementary7_readout_weights_reproduction.png", dpi=180)
+    plt.close(fig)
+    return {
+        "motor_neurons": int(weights.shape[0]), "muscles": int(weights.shape[1]),
+        "minimum_weight": float(weights.min()), "maximum_weight": float(weights.max()),
+        "mean_weight": float(weights.mean()),
+        "weight_standard_deviation": float(weights.std()),
+        "frobenius_norm": float(np.linalg.norm(weights)),
+        "positive_fraction": float(np.mean(weights > 0)),
+        "negative_fraction": float(np.mean(weights < 0)),
+        "fraction_abs_weight_below_1": float(np.mean(np.abs(weights) < 1)),
+    }
+
+
 def supplementary6_multiseed_reproduction(data_dir: Path, out_dir: Path) -> dict[str, object]:
     """Aggregate closed-loop behavioral outcomes across all perturbation seeds."""
     groups = (
-        ("control", "Control"),
-        ("remove_neurite", "Remove neurites"),
+        ("control", "Control"), ("remove_neurite", "Remove neurites"),
         ("shuffle_location", "Shuffle locations"),
         ("shuffle_weight_syn", "Shuffle synaptic weights"),
         ("shuffle_weight_gj", "Shuffle gap-junction weights"),
-        ("remove_syn", "Remove synapses"),
-        ("remove_gj", "Remove gap junctions"),
+        ("remove_syn", "Remove synapses"), ("remove_gj", "Remove gap junctions"),
     )
     raw: dict[str, list[dict[str, float]]] = {}
     for prefix, _ in groups:
@@ -529,14 +598,12 @@ def supplementary6_multiseed_reproduction(data_dir: Path, out_dir: Path) -> dict
             behavior = np.asarray(result["behavior_value"], dtype=np.float32)
             world_head = np.asarray(result["world_head_location"], dtype=np.float32)
             speed = np.linalg.norm(np.moveaxis(behavior[3:6], 0, -1), axis=-1)
-            head_speed = float(speed[:, 0].mean())
-            tail_speed = float(speed[:, -1].mean())
+            head_speed, tail_speed = float(speed[:, 0].mean()), float(speed[:, -1].mean())
             runs.append({
                 "seed": int(path.stem.rsplit("_", 1)[1]),
                 "net_head_displacement": float(np.linalg.norm(world_head[-1] - world_head[0])),
                 "head_path_length": float(np.linalg.norm(np.diff(world_head, axis=0), axis=1).sum()),
-                "mean_head_speed": head_speed,
-                "mean_tail_speed": tail_speed,
+                "mean_head_speed": head_speed, "mean_tail_speed": tail_speed,
                 "tail_to_head_speed_ratio": tail_speed / head_speed,
             })
             del result, behavior, world_head, speed
@@ -556,9 +623,7 @@ def supplementary6_multiseed_reproduction(data_dir: Path, out_dir: Path) -> dict
             sd = float(values.std(ddof=1)) if values.size > 1 else 0.0
             half_width = t95.get(values.size, 1.96) * sd / np.sqrt(values.size)
             condition[name] = {
-                "values": [float(value) for value in values],
-                "mean": mean,
-                "sd": sd,
+                "values": [float(value) for value in values], "mean": mean, "sd": sd,
                 "ci95": [mean - half_width, mean + half_width],
                 "relative_change_vs_control": float(mean / control[name] - 1.0),
             }
@@ -566,20 +631,18 @@ def supplementary6_multiseed_reproduction(data_dir: Path, out_dir: Path) -> dict
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 10), constrained_layout=True)
     labels = [label for _, label in groups]
-    plot_metrics = (
-        ("net_head_displacement", "Net head displacement"),
-        ("mean_head_speed", "Mean head speed"),
-        ("mean_tail_speed", "Mean tail speed"),
-        ("tail_to_head_speed_ratio", "Tail/head speed ratio"),
-    )
+    plot_metrics = (("net_head_displacement", "Net head displacement"),
+                    ("mean_head_speed", "Mean head speed"),
+                    ("mean_tail_speed", "Mean tail speed"),
+                    ("tail_to_head_speed_ratio", "Tail/head speed ratio"))
     rng = np.random.default_rng(2024)
     for ax, (name, title) in zip(axes.flat, plot_metrics):
         for index, (prefix, _) in enumerate(groups):
             values = np.asarray(summary[prefix][name]["values"])
             mean = summary[prefix][name]["mean"]
             low, high = summary[prefix][name]["ci95"]
-            jitter = rng.uniform(-0.10, 0.10, values.size)
-            ax.scatter(index + jitter, values, s=24, alpha=0.65, color="tab:blue")
+            ax.scatter(index + rng.uniform(-0.10, 0.10, values.size), values,
+                       s=24, alpha=0.65, color="tab:blue")
             ax.errorbar(index, mean, yerr=[[mean - low], [high - mean]], fmt="o",
                         color="black", capsize=5, lw=1.5)
         ax.axhline(control[name], color="tab:red", ls="--", lw=1, alpha=0.7)
@@ -622,8 +685,14 @@ def main() -> None:
         metrics["supplementary_figure2_connection_locations"] = supplementary2_reproduction(
             args.source_data_root / "Supplementary Figure 2", args.output
         )
+        metrics["supplementary_figure4_muscle_wave_delay"] = supplementary4_muscle_wave_reproduction(
+            args.source_data_root / "Supplementary Figure 4", args.output
+        )
         metrics["supplementary_figure6_multiseed_statistics"] = supplementary6_multiseed_reproduction(
             args.source_data_root / "Supplementary Figure 6", args.output
+        )
+        metrics["supplementary_figure7_readout_weights"] = supplementary7_readout_weights_reproduction(
+            args.source_data_root / "Supplementary Figure 7", args.output
         )
         metrics["supplementary_figure9_neurite_propagation"] = supplementary9_reproduction(
             args.source_data_root / "Supplementary Figure 9", args.output
