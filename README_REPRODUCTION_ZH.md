@@ -5,16 +5,16 @@
 
 ## 已完成的可执行复现
 
-在仓库根目录运行：
+在 `D:\Celegans\BAAIWorm` 目录运行：
 
 ```powershell
-python reproduce.py
+& "C:\Users\30767\anaconda3\python.exe" reproduce.py
 ```
 
 检查完整仿真环境：
 
 ```powershell
-python check_full_reproduction.py
+& "C:\Users\30767\anaconda3\python.exe" check_full_reproduction.py
 ```
 
 输出写入 `reproduction_output/`：
@@ -70,7 +70,7 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
   所示的头至尾波形，并比较头、中心和尾部速度。
 - 图 6 扰动：读取论文 Zenodo Source Data 中的 control、移除神经突、打乱连接位置、
   打乱突触/缝隙连接权重、移除突触/缝隙连接七种条件，比较神经相关矩阵以及头、
-  中心、尾部的相对位置和速度。默认数据路径为 `D:\BAAIWorm_Source_Fig6`，也可用
+  中心、尾部的相对位置和速度。默认数据路径为 `D:\Celegans\BAAIWorm_Source_Data\Source_Data\Figure 6`，也可用
   `--figure6-data` 指定。
 - 闭环/开环：读取 Figure 5 和 Supplementary Figure 8 的输入、80 个运动神经元及
   96 块肌肉时间序列，并计算频谱集中度，量化论文所述周期输入产生规则周期运动、
@@ -91,3 +91,19 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
 - 补充图 7：读取官方 `video_online_wout.pkl`，重绘 80 个运动神经元到 96 块肌肉的闭环 readout 权重矩阵和分布。输出为 `supplementary7_readout_weights_reproduction.png`。
 - 补充图 9：读取 AVAL 的 369 个有效轴突区段与两条树突的膜电位轨迹，复现胞体去极化沿轴突的空间衰减。远端轴突只保留约 19.18% 的去极化幅度，输出为 `supplementary9_neurite_propagation_reproduction.png`。
 - 图 4、图 5 与补充图 8：分别从官方位置/速度和闭环/开环时序数据重绘，并将全部定量结果写入 `reproduction_output/metrics.json`。
+
+## 主文图 1–3 重建
+
+运行 `python reproduce_main_figures.py`，生成 `main_figure1_overview_reproduction.png`、
+`main_figure2_network_construction_reproduction.png`、`main_figure3_body_model_reproduction.png`
+及 `main_figures_1_to_3_metrics.json`。图 2、3 的数值面板读取仓库发布的神经活动、HOC、
+身体网格、肌肉激活及 17 点状态数据；图 1 是依论文图注重绘的系统示意。图 2 的离子通道
+机制只做结构示意，图 3 未包含发布数据中不存在的渲染场景/力场面板，因此这些重建不应
+视为像图 4/6 那样逐像素或逐数据点的官方 Source Data 重绘。
+
+## 本地数据目录
+
+完整官方数据保存在 `D:\Celegans\BAAIWorm_Source_Data\Source_Data`。
+脚本按自身位置寻找此目录及其中的 `Figure 6` 子目录，项目整体移动后无需修改盘符。
+可用 `--source-data-root` 和 `--figure6-data` 显式指定其他数据位置。
+下载压缩包、重复图 6 子集、下载专用虚拟环境及临时缓存已在完整性校验后清理。

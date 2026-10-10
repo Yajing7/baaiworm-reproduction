@@ -1,0 +1,23 @@
+{
+  "figure1": {
+    "neurons": 136,
+    "tetrahedra": 3341,
+    "body_vertices": 984,
+    "muscles": 96,
+    "nature": "schematic redrawn; counts grounded in source and manuscript"
+  },
+  "figure2": {
+    "network_neurons": 136,
+    "connections_in_abstract_circuit": 3076,
+    "hoc_files": 302,
+    "note": "mechanism panel is schematic; other panels use released model/simulation assets"
+  },
+  "figure3": {
+    "mesh_vertices": 984,
+    "surface_triangles": 1466,
+    "muscles": 96,
+    "frames": 300,
+    "tracking_points": 17,
+    "source_note": "force fields and renderer-specific panels are not present in released numerical files"
+  }
+}

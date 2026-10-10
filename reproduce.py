@@ -765,12 +765,12 @@ def main() -> None:
     parser.add_argument(
         "--figure6-data",
         type=Path,
-        default=Path(r"D:\BAAIWorm_Source_Fig6"),
+        default=ROOT.parent / "BAAIWorm_Source_Data" / "Source_Data" / "Figure 6",
         help="Directory containing the selectively extracted Zenodo Figure 6 data",
     )
     parser.add_argument(
         "--source-data-root", type=Path,
-        default=Path(r"D:\BAAIWorm_Source_Data\Source_Data"),
+        default=ROOT.parent / "BAAIWorm_Source_Data" / "Source_Data",
         help="Root of the fully extracted official Zenodo Source Data",
     )
     args = parser.parse_args()
