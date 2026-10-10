@@ -90,6 +90,7 @@ OptiX 7.0，推荐 NVIDIA RTX 3090。完整流程还需要编译 NMODL 机制、
 - 补充图 6：汇总 41 个闭环仿真结果。三种打乱条件各包含 10 个种子，三种移除条件各包含 5 个结果；报告净位移、头/尾平均速度、尾头速度比及 95% t 置信区间。输出为 `supplementary6_multiseed_statistics.png`，逐种子数值保存在 `metrics.json`。
 - 补充图 7：读取官方 `video_online_wout.pkl`，重绘 80 个运动神经元到 96 块肌肉的闭环 readout 权重矩阵和分布。输出为 `supplementary7_readout_weights_reproduction.png`。
 - 补充图 9：读取 AVAL 的 369 个有效轴突区段与两条树突的膜电位轨迹，复现胞体去极化沿轴突的空间衰减。远端轴突只保留约 19.18% 的去极化幅度，输出为 `supplementary9_neurite_propagation_reproduction.png`。
+- 补充图 5：以仓库发布的 `img/GUI.png` 界面截图为底图补充标注，输出 `supplementary5_gui_reproduction.png`。这是静态界面资产的重建，不代表本地已成功运行实时 GUI；截图中没有可确认的食物源标记，故未臆造添加。
 - 图 4、图 5 与补充图 8：分别从官方位置/速度和闭环/开环时序数据重绘，并将全部定量结果写入 `reproduction_output/metrics.json`。
 
 ## 主文图 1–3 重建
